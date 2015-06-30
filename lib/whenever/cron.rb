@@ -43,7 +43,7 @@ module Whenever
         [time_in_cron_syntax(idx), task].compact.join(' ').strip
       end
 
-      def time_in_cron_syntax(idx)
+      def time_in_cron_syntax(idx = 0)
         @time = case @time
           when REGEX  then @time # raw cron syntax given
           when Symbol then parse_symbol
@@ -51,8 +51,8 @@ module Whenever
           else parse_time
         end
         splitted = @time.split(/\s/)
-        minute = splitted[0].to_i unless splitted[0].eql?("*")
-        hour = splitted[1].to_i unless splitted[1].eql?("*")
+        minute = splitted[0].to_i if splitted[0] and not splitted[0].eql?("*") and not splitted[0].match(',')
+        hour = splitted[1].to_i if splitted[1] and not splitted[1].eql?("*") and not splitted[1].match(',')
         if minute and hour
           actual_time = Time.new(1900,1,1,hour,minute)
           actual_time += (idx * @step) * 60
