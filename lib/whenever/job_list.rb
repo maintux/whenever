@@ -144,11 +144,11 @@ module Whenever
 
       output_all = roles.empty?
       @jobs.each do |time, jobs|
-        jobs.each do |job|
+        jobs.each_with_index do |job,idx|
           next unless output_all || roles.any? do |r|
             job.has_role?(r)
           end
-          Whenever::Output::Cron.output(time, job) do |cron|
+          Whenever::Output::Cron.output(time, job, idx) do |cron|
             cron << "\n\n"
 
             if cron[0,1] == "@"

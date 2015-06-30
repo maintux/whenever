@@ -8,11 +8,12 @@ module Whenever
 
       attr_accessor :time, :task
 
-      def initialize(time = nil, task = nil, at = nil)
+      def initialize(time = nil, task = nil, at = nil, step = 0)
         @at_given = at
         @time = time
         @task = task
         @at   = at.is_a?(String) ? (Chronic.parse(at) || 0) : (at || 0)
+        @step = step
       end
 
       def self.enumerate(item, detect_cron = true)
@@ -30,25 +31,36 @@ module Whenever
         items
       end
 
-      def self.output(times, job)
+      def self.output(times, job, idx)
         enumerate(times).each do |time|
           enumerate(job.at, false).each do |at|
-            yield new(time, job.output, at).output
+            yield new(time, job.output, at, job.step).output(idx)
           end
         end
       end
 
-      def output
-        [time_in_cron_syntax, task].compact.join(' ').strip
+      def output(idx)
+        [time_in_cron_syntax(idx), task].compact.join(' ').strip
       end
 
-      def time_in_cron_syntax
-        case @time
+      def time_in_cron_syntax(idx)
+        @time = case @time
           when REGEX  then @time # raw cron syntax given
           when Symbol then parse_symbol
           when String then parse_as_string
           else parse_time
         end
+        splitted = @time.split(/\s/)
+        minute = splitted[0].to_i unless splitted[0].eql?("*")
+        hour = splitted[1].to_i unless splitted[1].eql?("*")
+        if minute and hour
+          actual_time = Time.new(1900,1,1,hour,minute)
+          actual_time += (idx * @step) * 60
+          splitted[0] = actual_time.min
+          splitted[1] = actual_time.hour
+          @time = splitted.join(' ')
+        end
+        @time
       end
 
     protected
