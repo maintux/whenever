@@ -144,10 +144,14 @@ module Whenever
 
       output_all = roles.empty?
       @jobs.each do |time, jobs|
-        jobs.each_with_index do |job,idx|
+        last_at = nil
+        idx = 0
+        jobs.each do |job|
           next unless output_all || roles.any? do |r|
             job.has_role?(r)
           end
+          idx = 0 unless job.at.eql?(last_at)
+          last_at = job.at
           Whenever::Output::Cron.output(time, job, idx) do |cron|
             cron << "\n\n"
 
@@ -157,6 +161,7 @@ module Whenever
               regular_jobs << cron
             end
           end
+          idx += 1
         end
       end
 
